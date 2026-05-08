@@ -1,52 +1,52 @@
-# Isolating Synthetic Fingerprints: A Frequency-Domain Approach to Robust Deepfake Detection
+# Isolating Synthetic Fingerprints: A Frequency-Domain Approach to Robust Deepfake Detection using 2D FFT and Lightweight CNNs
 
-[cite_start]A lightweight deepfake detection engine that isolates synthetic fingerprints in the frequency domain using a 2D Fast Fourier Transform (FFT) and a ResNet-18 backbone[cite: 2, 6, 8].
-
-[cite_start]As generative artificial intelligence produces increasingly realistic synthetic media, traditional, spatial-domain deepfake detectors have significantly diminished in efficacy[cite: 4]. [cite_start]Modern deepfakes are highly resilient to standard detection when subjected to compression or blurring[cite: 5]. [cite_start]This project shifts the detection paradigm from the spatial to the frequency domain to expose the inherent, grid-like synthetic fingerprints left behind by generative upsampling processes[cite: 19, 21].
+This repository contains the official implementation for the paper **"Isolating Synthetic Fingerprints."** As generative artificial intelligence continues to produce increasingly realistic synthetic media, the efficacy of traditional, spatial-domain deepfake detectors has significantly diminished. Modern deepfakes are highly resilient to standard detection when subjected to compression or blurring. This project presents a novel, lightweight deepfake detection engine that shifts the detection paradigm to the frequency domain to isolate synthetic fingerprints.
 
 ## System Architecture
 
-[cite_start]The system comprises three primary modules[cite: 31]:
+The proposed pipeline aims to distinguish pristine media from synthetically generated deepfakes by analyzing artifacts in the frequency domain. The system comprises three primary modules:
 
 ### 1. Micro-Blur Preprocessing Pipeline
-[cite_start]To counter the susceptibility of spatial-only detectors to image degradation, a micro-blur preprocessing step is applied prior to spectral analysis[cite: 33, 34]. [cite_start]By applying a controlled Gaussian kernel ($\sigma=1.5$), high-frequency spatial noise is intentionally suppressed[cite: 35, 69]. [cite_start]This step forces the subsequent spectral extraction to isolate the deep, structural synthetic fingerprints rather than superficial pixel-level noise[cite: 40].
+A critical vulnerability of spatial-only deepfake detectors is their susceptibility to image degradation. To counter this, a micro-blur preprocessing step is applied prior to spectral analysis. By applying a controlled Gaussian kernel ($\sigma=1.5$), high-frequency spatial noise is intentionally suppressed, forcing the subsequent spectral extraction to isolate the deep, structural synthetic fingerprints rather than superficial pixel-level noise.
+
+The Gaussian kernel is defined as:
+$$G(x,y)=\frac{1}{2\pi\sigma^2}e^{-\frac{x^2+y^2}{2\sigma^2}}$$
 
 ### 2. Frequency-Domain Transformation via 2D FFT
-[cite_start]Generative models often leave distinct, grid-like artifacts in the high-frequency spectrum during the upsampling process[cite: 50]. [cite_start]To expose these artifacts, the preprocessed image is transformed using the 2D Discrete Fourier Transform (DFT)[cite: 51]:
+Generative models often leave distinct, grid-like artifacts in the high-frequency spectrum during the upsampling process. To expose these artifacts, the preprocessed image $f(x,y)$ of size $M \times N$ is transformed using the 2D Discrete Fourier Transform (DFT):
 
-[cite_start]$$F(u,v)=\sum_{x=0}^{M-1}\sum_{y=0}^{N-1}f(x,y)e^{-j2\pi(\frac{ux}{M}+\frac{vy}{N})}$$ [cite: 52]
+$$F(u,v)=\sum_{x=0}^{M-1}\sum_{y=0}^{N-1}f(x,y)e^{-j2\pi(\frac{ux}{M}+\frac{vy}{N})}$$
 
-[cite_start]The resulting magnitude spectrum is shifted to center the zero-frequency component, providing a structured spectral map[cite: 55].
+The resulting magnitude spectrum is shifted to center the zero-frequency component, providing a structured spectral map.
 
 ### 3. Feature Extraction and Classification
-[cite_start]The preprocessed spectral magnitude maps are fed into a ResNet-18 architecture[cite: 57]. [cite_start]The residual connections prevent vanishing gradients while effectively capturing the hierarchical patterns present in the frequency spectra[cite: 59]. [cite_start]The network is optimized using the Binary Cross-Entropy (BCE) loss function[cite: 61]:
+The preprocessed spectral magnitude maps are fed into a ResNet-18 architecture. ResNet-18 was strategically selected to maintain computational efficiency while the residual connections prevent vanishing gradients. To train the classifier, we optimize the network using the Binary Cross-Entropy (BCE) loss function:
 
-[cite_start]$$\mathcal{L}=-\frac{1}{N}\sum_{i=1}^{N}[y_{i}log(\hat{y}_{i})+(1-y_{i})log(1-\hat{y}_{i})]$$ [cite: 63]
+$$\mathcal{L}=-\frac{1}{N}\sum_{i=1}^{N}[y_{i}\log(\hat{y}_{i})+(1-y_{i})\log(1-\hat{y}_{i})]$$
 
 ## Experimental Results
 
-[cite_start]Experiments were conducted on two highly benchmarked datasets: FaceForensics++ (FF++) and Celeb-DF v2[cite: 66]. 
+The system was implemented using PyTorch and evaluated on two highly benchmarked datasets: FaceForensics++ (FF++) and Celeb-DF v2. 
 
 | Dataset | Acc. | Prec. | Rec. | F1-Score |
 | :--- | :--- | :--- | :--- | :--- |
 | **FF++ (Raw)** | 99.12% | 98.90% | 99.21% | 99.05% |
 | **Celeb-DF v2** | 98.45% | 97.82% | 98.10% | 97.96% |
 
-[cite_start]*Source: Classification Performance on Benchmark Datasets[cite: 73, 74].*
-
-[cite_start]**Inference Speed:** The reliance on ResNet-18 drastically reduced computational overhead compared to Vision Transformer (ViT) baselines, achieving 45 frames per second (FPS) on a standard NVIDIA RTX 3060 GPU[cite: 75].
+**Inference Speed:** The reliance on ResNet-18 drastically reduced computational overhead compared to Vision Transformer (ViT) baselines, achieving **45 frames per second (FPS)** on a standard NVIDIA RTX 3060 GPU.
 
 ## Ablation Study
-[cite_start]An ablation study conducted on the Celeb-DF v2 dataset validated the efficacy of the micro-blur module[cite: 77]. [cite_start]Removing the micro-blur pipeline resulted in a performance degradation, dropping the overall accuracy from 98.45% to 94.12%[cite: 79]. [cite_start]Without the suppression of high-frequency spatial noise, the ResNet-18 backbone prematurely overfit to superficial, pixel-level artifacts[cite: 80].
+An ablation study on the Celeb-DF v2 dataset confirmed that removing the micro-blur pipeline dropped the overall accuracy from 98.45% to 94.12%. Without the suppression of high-frequency spatial noise, the ResNet-18 backbone prematurely overfit to superficial, pixel-level artifacts, losing its ability to generalize.
 
 ## Implementation Details
-* [cite_start]**Framework:** PyTorch [cite: 69]
-* [cite_start]**Optimizer:** Adam (learning rate $1\times10^{-4}$) [cite: 69]
-* [cite_start]**Batch Size:** 32 [cite: 69]
-* [cite_start]**Epochs:** 50 [cite: 69]
+* **Framework:** PyTorch
+* **Backbone Weights:** ImageNet Initialized
+* **Optimizer:** Adam (Learning Rate: $1\times 10^{-4}$)
+* **Batch Size:** 32
+* **Epochs:** 50
 
 ## Citation
-If you utilize this research, please consider citing:
+If you find this research helpful, please consider citing:
 ```bibtex
 @article{das2026deepfake,
   title={Isolating Synthetic Fingerprints: A Frequency-Domain Approach to Robust Deepfake Detection using 2D FFT and Lightweight CNNs},
